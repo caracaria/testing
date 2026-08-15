@@ -8,4 +8,5 @@ jobs:
       - name: Open Terminal (tmate)
         uses: mxschmitt/action-tmate@v3
         with:
-          limit-access-to-actor: true
+          # این گزینه کلید SSH را اجباری نمی‌کند و لینک وب می‌دهد
+          limit-access-to-actor: false
