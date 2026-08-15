@@ -1,0 +1,23 @@
+name: StormDNS Test
+on: [workflow_dispatch] 
+
+jobs:
+  run-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install and Run StormDNS
+        run: |
+          # نصب StormDNS
+          bash <(curl -Ls https://raw.githubusercontent.com/nullroute1970/StormDNS/main/server_linux_install.sh)
+          
+      - name: Start Pinggy Tunnel
+        run: |
+          # اینجا پورت پیش‌فرض StormDNS را حدس می‌زنیم، اگر کار نکرد باید تغییرش دهیم
+          # پورت را با پورتی که ابزارت نیاز دارد جایگزین کن
+          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:8080 ssh.pinggy.io > pinggy_url.txt 2>&1 &
+          sleep 10
+          echo "Your public link is below:"
+          cat pinggy_url.txt
+
+      - name: Keep Alive (Tmate)
+        uses: mxschmitt/action-tmate@v3
