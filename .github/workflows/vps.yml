@@ -1,37 +1,29 @@
-name: Automated VPS & 3x-ui Panel
+name: Tailscale Exit Node
 
 on:
   workflow_dispatch:
 
 jobs:
-  run-vps:
+  run-exit-node:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup & Connect Tailscale
+      - name: Enable IP Forwarding
+        run: |
+          echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
+          echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
+          sudo sysctl -p /etc/sysctl.d/99-tailscale.conf
+
+      - name: Start Tailscale Exit Node
         uses: tailscale/github-action@v2
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          args: --ssh
-
-      - name: Set Runner Password
-        run: |
-          echo "runner:1234" | sudo chpasswd
-          sudo sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-          sudo systemctl restart ssh
-
-      - name: Install & Configure 3x-ui Panel
-        run: |
-          curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh -o install.sh
-          echo "n" | sudo bash install.sh
-          sudo x-ui port 2053
-          sudo x-ui username admin
-          sudo x-ui password admin1234
-          sudo x-ui base /admin/
-          sudo x-ui restart
+          args: --ssh --advertise-exit-node
 
       - name: Keep Alive
-        run: sleep 6h
+        run: |
+          echo "Exit Node is running!"
+          sleep 6h
