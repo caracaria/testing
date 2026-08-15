@@ -1,0 +1,23 @@
+name: Ephemeral Test VPS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-vps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup & Connect Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          args: --ssh
+
+      - name: Keep Alive for Testing
+        run: |
+          echo "=== Machine is Ready ==="
+          tailscale ip -4
+          sleep 2h
