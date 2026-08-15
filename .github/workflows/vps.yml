@@ -15,37 +15,23 @@ jobs:
         uses: tailscale/github-action@v2
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          args: --ssh
 
-      - name: Install & Setup ngrok
+      - name: Set Runner Password
         run: |
-          curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
-          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
-          sudo apt update && sudo apt install ngrok -y
-          ngrok config add-authtoken ${{ secrets.NGROK_AUTHTOKEN }}
+          echo "runner:1234" | sudo chpasswd
+          sudo sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          sudo systemctl restart ssh
 
       - name: Install & Configure 3x-ui Panel
         run: |
-          # دانلود و نصب پنل با حالت اتوماتیک
           curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh -o install.sh
           echo "n" | sudo bash install.sh
-          
-          # تنظیم قطعی مقادیر دلخواه بدون وابستگی به سوالات اسکریپت
           sudo x-ui port 2053
           sudo x-ui username admin
           sudo x-ui password admin1234
           sudo x-ui base /admin/
           sudo x-ui restart
 
-      - name: Start ngrok Tunnel & Keep Alive
-        run: |
-          # تونل ngrok روی پورت فیکس شده 2053
-          nohup ngrok http 2053 > /dev/null 2>&1 &
-          sleep 6
-          
-          echo "=========================================="
-          NGROK_URL=$(curl -s http://127.0.0.1:4040/api/tunnels | grep -o 'https://[^"]*' | head -n 1)
-          echo "Your Fixed Login URL:"
-          echo "${NGROK_URL}/admin/"
-          echo "=========================================="
-          
-          sleep 6h
+      - name: Keep Alive
+        run: sleep 6h
