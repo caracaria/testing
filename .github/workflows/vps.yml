@@ -23,30 +23,29 @@ jobs:
           sudo apt update && sudo apt install ngrok -y
           ngrok config add-authtoken ${{ secrets.NGROK_AUTHTOKEN }}
 
-      - name: Install 3x-ui Panel
+      - name: Install & Configure 3x-ui Panel
         run: |
+          # دانلود و نصب پنل با حالت اتوماتیک
           curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh -o install.sh
-          sudo bash install.sh <<EOF
-          y
-          admin
-          admin1234
-          2053
+          echo "n" | sudo bash install.sh
           
-          4
-          y
-          EOF
+          # تنظیم قطعی مقادیر دلخواه بدون وابستگی به سوالات اسکریپت
+          sudo x-ui port 2053
+          sudo x-ui username admin
+          sudo x-ui password admin1234
+          sudo x-ui base /admin/
+          sudo x-ui restart
 
       - name: Start ngrok Tunnel & Keep Alive
         run: |
+          # تونل ngrok روی پورت فیکس شده 2053
           nohup ngrok http 2053 > /dev/null 2>&1 &
           sleep 6
           
           echo "=========================================="
-          echo "Public ngrok URL:"
-          curl -s http://127.0.0.1:4040/api/tunnels | grep -o 'https://[^"]*' || true
-          echo ""
-          echo "Panel Path & Settings:"
-          sudo x-ui settings | grep -E "port|webBasePath|Access URL" || true
+          NGROK_URL=$(curl -s http://127.0.0.1:4040/api/tunnels | grep -o 'https://[^"]*' | head -n 1)
+          echo "Your Fixed Login URL:"
+          echo "${NGROK_URL}/admin/"
           echo "=========================================="
           
           sleep 6h
