@@ -7,15 +7,18 @@ jobs:
     steps:
       - name: Install and Run StormDNS
         run: |
-          # اجرای اسکریپت با sudo برای حل مشکل دسترسی
-          sudo bash <(curl -Ls https://raw.githubusercontent.com/nullroute1970/StormDNS/main/server_linux_install.sh)
+          # ۱. دانلود فایل اسکریپت
+          curl -Ls https://raw.githubusercontent.com/nullroute1970/StormDNS/main/server_linux_install.sh -o install.sh
+          # ۲. دادن دسترسی اجرا
+          chmod +x install.sh
+          # ۳. اجرای فایل دانلود شده با دسترسی روت
+          sudo ./install.sh
           
       - name: Start Pinggy Tunnel
         run: |
-          # اجرای تانل در پس‌زمینه (فرض بر پورت 8080)
+          # اجرای تانل (پورت 8080)
           ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:8080 ssh.pinggy.io > pinggy_url.txt 2>&1 &
           sleep 5
-          echo "Your public link is below:"
           cat pinggy_url.txt
 
       - name: Keep Alive (Tmate)
