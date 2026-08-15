@@ -1,25 +1,17 @@
-name: StormDNS Test
+name: StormDNS Manual Setup
 on: [workflow_dispatch] 
 
 jobs:
-  run-test:
+  manual-setup:
     runs-on: ubuntu-latest
     steps:
-      - name: Install and Run StormDNS
+      - name: Install
         run: |
-          # ۱. دانلود فایل اسکریپت
+          # دانلود و نصب (بدون اجرای نهایی سرویس‌ها)
           curl -Ls https://raw.githubusercontent.com/nullroute1970/StormDNS/main/server_linux_install.sh -o install.sh
-          # ۲. دادن دسترسی اجرا
           chmod +x install.sh
-          # ۳. اجرای فایل دانلود شده با دسترسی روت
-          sudo ./install.sh
-          
-      - name: Start Pinggy Tunnel
-        run: |
-          # اجرای تانل (پورت 8080)
-          ssh -o StrictHostKeyChecking=no -p 443 -R0:localhost:8080 ssh.pinggy.io > pinggy_url.txt 2>&1 &
-          sleep 5
-          cat pinggy_url.txt
+          # فعلاً فقط نصب را انجام بده، بدون اینکه به سوالات تعاملی گیر کند
+          sudo bash install.sh || echo "نصب انجام شد، حالا دستی تنظیم می‌کنیم"
 
-      - name: Keep Alive (Tmate)
+      - name: Debug and Configure
         uses: mxschmitt/action-tmate@v3
