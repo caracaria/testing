@@ -1,4 +1,4 @@
-name: Tailscale Exit Node
+name: Tailscale Exit Node & VPS
 
 on:
   workflow_dispatch:
@@ -6,26 +6,31 @@ on:
 jobs:
   run-exit-node:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Enable IP Forwarding & NAT
+      - name: Optimize Network & MTU Clamping
         run: |
-          echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
-          echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
-          sudo sysctl -p /etc/sysctl.d/99-tailscale.conf
+          sudo sysctl -w net.ipv4.ip_forward=1
+          sudo sysctl -w net.ipv6.conf.all.forwarding=1
           sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-          sudo ip6tables -t nat -A POSTROUTING -o eth0 -j MASQUERADE || true
+          sudo iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
-      - name: Start Tailscale Exit Node
-        uses: tailscale/github-action@v2
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          args: --ssh --advertise-exit-node
-
-      - name: Keep Alive
+      - name: Install and Start Tailscale
+        env:
+          TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
         run: |
-          echo "Exit Node is running!"
-          sleep 6h
+          curl -fsSL https://tailscale.com/install.sh | sh
+          sudo tailscale up \
+            --authkey="${TAILSCALE_AUTHKEY}" \
+            --advertise-exit-node \
+            --ssh \
+            --hostname="gh-runner-node" \
+            --accept-routes \
+            --reset
+
+      - name: Keep Alive (6 Hours)
+        run: |
+          echo "Tailscale is running and connected."
+          sleep 21600
